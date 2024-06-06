@@ -1,87 +1,49 @@
 // create web server
-// import express module
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const app = express();
+const bodyParser = require('body-parser');
+const fs = require('fs');
 
 // set the view engine to ejs
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
-// create a new route
+// set the views to the views folder
+app.set('views', './views');
+
+// use body parser
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// set the public folder to be accessible
+app.use(express.static('public'));
+
+// create a new route to the home page
 app.get('/', (req, res) => {
-    res.render('index', {
-        title: 'Comments',
-        comments: comments
-    });
+    res.render('index');
 });
 
+// create a new route to the comments page
+app.get('/comments', (req, res) => {
+    // get the comments from the comments.json file
+    let comments = JSON.parse(fs.readFileSync('comments.json'));
+
+    // render the comments page and pass the comments array
+    res.render('comments', { comments: comments });
+});
+
+// create a new route to the new comment page
 app.get('/new', (req, res) => {
-    res.render('new', {
-        title: 'New Comment'
-    });
+    res.render('new');
 });
 
+// create a new route to the post method
 app.post('/new', (req, res) => {
-    let comment = req.body.comment;
-    comments.push(comment);
-    fs.writeFile('comments.json', JSON.stringify(comments), 'utf8', (err) => {
-        if (err) {
-            console.log(err);
-        }
-    });
-    res.redirect('/');
+    let comments = JSON.parse(fs.readFileSync('comments.json'));
+    comments.push(req.body);
+    fs.writeFileSync('comments.json', JSON.stringify(comments));
+    res.redirect('/comments');
 });
 
-// create a new route
-app.get('/delete', (req, res) => {
-    res.render('delete', {
-        title: 'Delete Comment',
-        comments: comments
-    });
-});
-
-app.post('/delete', (req, res) => {
-    let comment = req.body.comment;
-    comments = comments.filter((element) => {
-        return element != comment;
-    });
-    fs.writeFile('comments.json', JSON.stringify(comments), 'utf8', (err) => {
-        if (err) {
-            console.log(err);
-        }
-    });
-    res.redirect('/');
-});
-
-// create a new route
-app.get('/edit', (req, res) => {
-    res.render('edit', {
-        title: 'Edit Comment',
-        comments: comments
-    });
-});
-
-app.post('/edit', (req, res) => {
-    let oldComment = req.body.oldComment;
-    let newComment = req.body.newComment;
-    comments = comments.map((element) => {
-        if (element == oldComment) {
-            return newComment;
-        }
-        return element;
-    });
-    fs.writeFile('comments.json', JSON.stringify(comments), 'utf8', (err) => {
-        if (err) {
-            console.log(err);
-        }
-    });
-    res.redirect('/');
-});
-
-// create a new route
-app.get('/comments.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(comments));
+// listen on port 3000
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
 });
